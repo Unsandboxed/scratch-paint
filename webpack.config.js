@@ -73,19 +73,22 @@ const base = {
 };
 
 module.exports = [
-    // For the playground
+    // Building the playground for external use
     defaultsDeep({}, base, {
-        devServer: {
-            contentBase: path.resolve(__dirname, 'playground'),
-            host: '0.0.0.0',
-            port: process.env.PORT || 8078
-        },
         entry: {
             playground: './src/playground/playground.jsx'
         },
         output: {
             path: path.resolve(__dirname, 'playground'),
             filename: '[name].js'
+        }
+    }),
+    // For the playground demo
+    defaultsDeep({}, base, {
+        devServer: {
+            contentBase: path.resolve(__dirname, 'playground'),
+            host: '0.0.0.0',
+            port: process.env.PORT || 8078
         },
         plugins: base.plugins.concat([
             new HtmlWebpackPlugin({
@@ -95,7 +98,7 @@ module.exports = [
         ])
     }),
     // For use as a library
-    defaultsDeep({}, base, {
+    /*defaultsDeep({}, base, {
         externals: {
             'prop-types': 'prop-types',
             'react': 'react',
@@ -117,5 +120,5 @@ module.exports = [
             filename: '[name].js',
             libraryTarget: 'commonjs2'
         }
-    })
+    })*/
 ];
