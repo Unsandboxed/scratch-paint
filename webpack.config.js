@@ -87,8 +87,7 @@ module.exports = [
         },
         plugins: [
             new HtmlWebpackPlugin({
-                title: 'Scratch 3.0 Paint Editor Playground',
-                template: 'src/playground/index.html'
+                title: 'Scratch 3.0 Paint Editor Playground'
             })
         ],
     }),
