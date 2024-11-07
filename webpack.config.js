@@ -2,7 +2,7 @@ const defaultsDeep = require('lodash.defaultsdeep');
 const path = require('path');
 
 // Plugins
-const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 
 // PostCss
@@ -86,8 +86,9 @@ module.exports = [
             port: process.env.PORT || 8078
         },
         plugins: [
-            new HtmlWebpackPlugin({
-                title: 'Scratch 3.0 Paint Editor Playground'
+            new CopyWebpackPlugin({
+                context: path.resolve(__dirname, 'playground'),
+                patterns: [{ from: path.resolve(__dirname, '../src/playground/public') }]
             })
         ],
     }),
