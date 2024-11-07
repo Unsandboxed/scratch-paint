@@ -13,7 +13,6 @@ import {FONTS} from 'scratch-render-fonts';
 
 const appTarget = document.createElement('div');
 appTarget.setAttribute('class', styles.playgroundContainer);
-document.body.appendChild(appTarget);
 const store = createStore(
     reducer,
     intlInitialState,
@@ -29,6 +28,16 @@ const svgString =
         '<polyline points="30.185,405.995 22.689,413.491 15.192,405.995 "/>' +
     '</svg>';
 class Playground extends React.Component {
+    static inject (domNode) {
+        domNode.appendChild(appTarget);
+        ReactDOM.render((
+            <Provider store={store}>
+                <IntlProvider>
+                    <Playground />
+                </IntlProvider>
+            </Provider>
+        ), appTarget);
+    }
     constructor (props) {
         super(props);
         bindAll(this, [
@@ -180,12 +189,5 @@ class Playground extends React.Component {
             </div>
         );
     }
-
+    
 }
-ReactDOM.render((
-    <Provider store={store}>
-        <IntlProvider>
-            <Playground />
-        </IntlProvider>
-    </Provider>
-), appTarget);
