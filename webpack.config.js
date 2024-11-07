@@ -2,7 +2,6 @@ const defaultsDeep = require('lodash.defaultsdeep');
 const path = require('path');
 
 // Plugins
-const CopyWebpackPlugin = require('copy-webpack-plugin');
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 
 // PostCss
@@ -73,27 +72,6 @@ const base = {
 };
 
 module.exports = [
-    // For the playground demo
-    defaultsDeep({}, base, {
-        output: {
-            path: path.resolve(__dirname, 'playground'),
-            filename: '[name].js',
-            libraryTarget: 'umd2'
-        },
-        devServer: {
-            contentBase: path.resolve(__dirname, 'playground'),
-            host: '0.0.0.0',
-            port: process.env.PORT || 8078
-        },
-        plugins: [
-            new CopyWebpackPlugin({
-                patterns: [{
-                    from: path.resolve(__dirname, 'src/playground/public'),
-                    to: path.resolve(__dirname, 'playground')
-                }]
-            })
-        ],
-    }),
     // Building the playground for external use
     defaultsDeep({}, base, {
         entry: {
