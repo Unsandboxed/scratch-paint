@@ -80,7 +80,7 @@ module.exports = [
         },
         output: {
             path: path.resolve(__dirname, 'dist'),
-            filename: 'dist-[name].mjs',
+            filename: 'dist-[name].js',
             libraryTarget: 'umd2'
         }
     }),
