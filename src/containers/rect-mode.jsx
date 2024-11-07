@@ -145,6 +145,7 @@ RectMode.propTypes = {
     isRectModeActive: PropTypes.bool.isRequired,
     onChangeFillColor: PropTypes.func.isRequired,
     onChangeStrokeColor: PropTypes.func.isRequired,
+    // eslint-disable-next-line react/no-unused-prop-types
     onChangeRectRadius: PropTypes.func.isRequired,
     onUpdateImage: PropTypes.func.isRequired,
     rectRadius: PropTypes.number,

@@ -148,6 +148,7 @@ const ModeToolsComponent = props => {
         );
     }
     case Modes.RECT:
+    {
         // to do: use reducers
         const currentIcon = roundRectIcon;
         const currentRadiusValue = props.rectRadius;
@@ -172,7 +173,8 @@ const ModeToolsComponent = props => {
                     onSubmit={changeFunction}
                 />
             </div>
-        )
+        );
+    }
     case Modes.BIT_ERASER:
         /* falls through */
     case Modes.ERASER:
