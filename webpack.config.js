@@ -87,8 +87,10 @@ module.exports = [
         },
         plugins: [
             new CopyWebpackPlugin({
-                to: path.resolve(__dirname, 'playground'),
-                patterns: [{ from: path.resolve(__dirname, 'src/playground/public') }]
+                patterns: [{
+                    from: path.resolve(__dirname, 'src/playground/public'),
+                    to: path.resolve(__dirname, 'playground')
+                }]
             })
         ],
     }),
