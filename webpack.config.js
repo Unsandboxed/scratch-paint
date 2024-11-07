@@ -80,7 +80,8 @@ module.exports = [
         },
         output: {
             path: path.resolve(__dirname, 'dist'),
-            filename: 'playground-[name].js'
+            filename: 'dist-[name].mjs',
+            libraryTarget: 'umd'
         }
     }),
     // For the playground demo
