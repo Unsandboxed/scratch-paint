@@ -2,7 +2,6 @@ const defaultsDeep = require('lodash.defaultsdeep');
 const path = require('path');
 
 // Plugins
-const HtmlWebpackPlugin = require('html-webpack-plugin');
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 
 // PostCss
@@ -73,6 +72,19 @@ const base = {
 };
 
 module.exports = [
+    // For the playground demo
+    defaultsDeep({}, base, {
+        output: {
+            path: path.resolve(__dirname, 'playground'),
+            filename: '[name].js',
+            libraryTarget: 'umd2'
+        },
+        devServer: {
+            contentBase: path.resolve(__dirname, 'playground'),
+            host: '0.0.0.0',
+            port: process.env.PORT || 8078
+        }
+    }),
     // Building the playground for external use
     defaultsDeep({}, base, {
         entry: {
@@ -83,27 +95,6 @@ module.exports = [
             filename: 'dist-[name].js',
             libraryTarget: 'umd2'
         }
-    }),
-    // For the playground demo
-    defaultsDeep({}, base, {
-        entry: {
-            playground: './src/playground/playground.jsx'
-        },
-        output: {
-            path: path.resolve(__dirname, 'playground'),
-            filename: '[name].js'
-        },
-        devServer: {
-            contentBase: path.resolve(__dirname, 'playground'),
-            host: '0.0.0.0',
-            port: process.env.PORT || 8078
-        },
-        plugins: base.plugins.concat([
-            new HtmlWebpackPlugin({
-                template: 'src/playground/index.ejs',
-                title: 'Scratch 3.0 Paint Editor Playground'
-            })
-        ])
     }),
     // For use as a library
     /*defaultsDeep({}, base, {
