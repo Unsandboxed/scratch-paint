@@ -79,12 +79,19 @@ module.exports = [
             playground: './src/playground/playground.jsx'
         },
         output: {
-            path: path.resolve(__dirname, 'playground'),
-            filename: '[name].js'
+            path: path.resolve(__dirname, 'dist'),
+            filename: 'playground-[name].js'
         }
     }),
     // For the playground demo
     defaultsDeep({}, base, {
+        entry: {
+            playground: './src/playground/playground.jsx'
+        },
+        output: {
+            path: path.resolve(__dirname, 'playground'),
+            filename: '[name].js'
+        },
         devServer: {
             contentBase: path.resolve(__dirname, 'playground'),
             host: '0.0.0.0',
