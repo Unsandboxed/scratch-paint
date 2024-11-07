@@ -13,6 +13,9 @@
     </head>
     <body>
         <div id="app"></div>
-        <script src="./playground.js" onload="Playground.inject(document.querySelector('div#app'));"></script>
+        <script src="./playground.js" defer></script>
+        <script defer>
+            Playground.inject(document.querySelector('div#app'));
+        </script>
     </body>
 </html>
