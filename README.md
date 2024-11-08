@@ -1,19 +1,6 @@
-# TurboWarp/scratch-paint
+# Unsandboxed/scratch-paint-portable
 
-Modified version of scratch-paint for TurboWarp
-
-## Building
-
-```bash
-git clone https://github.com/TurboWarp/scratch-paint.git
-npm ci
-npm start
-npm run build
-```
-
-Development playground runs on http://localhost:8078/playground/. Note that http://localhost:8078/ gives you the **built** playground, not the development playground.
-
-For more information, see https://docs.turbowarp.org/development/getting-started
+A more concise version of scratch-paint for embedded use.
 
 ## License
 
