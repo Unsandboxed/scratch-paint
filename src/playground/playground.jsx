@@ -177,6 +177,7 @@ class Playground extends React.Component {
       return byteArrays;
     }
     uploadImage() {
+        if (this.getHook('uploadImage') === false) return;
         document.getElementById(styles.fileInput).click();
     }
     onUploadImage(event) {
