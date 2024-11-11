@@ -58,7 +58,9 @@ class Playground extends React.Component {
     static exports = {
         PlaygroundAPI,
         PaintEditor,
-        defaultImage: svgString
+        defaultImage: svgString,
+        FONTS,
+        styles
     };
     static inject (domNode) {
         return new PlaygroundAPI(domNode);
@@ -74,7 +76,7 @@ class Playground extends React.Component {
         // Append ?dir=rtl to URL to get RTL layout
         const match = location.search.match(/dir=([^&]+)/);
         const rtl = match && match[1] == 'rtl';
-        this.debug = true;
+        this.debug = false;
         this.id = '0';
         this.state = {
             name: 'arrow',
@@ -89,7 +91,7 @@ class Playground extends React.Component {
     }
     getHook(hook, ...args) {
         if (!this.props.hooks) return undefined;
-        return this.props.hooks(hook, ...args);
+        return this.props.hooks(hook, this, ...args);
     }
     handleUpdateName (name) {
         if (this.getHook('handleUpdateName', name) === false) return;
