@@ -68,10 +68,12 @@ class Playground extends React.Component {
     constructor (props) {
         super(props);
         bindAll(this, [
+            'uploadImage',
             'downloadImage',
             'handleUpdateName',
             'handleUpdateImage',
-            'onUploadImage'
+            'onUploadImage',
+            'getHook'
         ]);
         // Append ?dir=rtl to URL to get RTL layout
         const match = location.search.match(/dir=([^&]+)/);
