@@ -14,13 +14,20 @@ class TWPaintEditorWrapper extends React.Component {
         this.state = {
             key: 0
         };
+        if (this.props.trivialAPIref) {
+           const apiRef = this.props.trivialAPIref.current;
+           apiRef.refreshWidth = this.refreshWidth.bind(this);
+        }
+    }
+    refreshWidth () {
+        this.props.onResetZoomLevels();
+        this.setState({
+            key: this.state.key + 1
+        });
     }
     componentWillUpdate (nextProps) {
         if (this.props.width !== nextProps.width || this.props.height !== nextProps.height) {
-            this.props.onResetZoomLevels();
-            this.setState({
-                key: this.state.key + 1
-            });
+            this.refreshWidth();
         }
     }
     render () {

@@ -39,18 +39,31 @@ class PlaygroundAPI {
         this.store = PlaygroundAPI.makeStore();
         this.appTarget = PlaygroundAPI.makeAppTarget();
         this.domNode.appendChild(this.appTarget);
+        this._playgroundNode = React.createRef();
+        this._internalAPIs = React.createRef();
+        this._internalAPIs.current = {};
         this.domRender = ReactDOM.render((
             <Provider store={this.store}>
                 <IntlProvider>
-                    <Playground hooks={this.getHook.bind(this)} />
+                    <Playground
+                        ref={this._playgroundNode}
+                        apiRef={this._internalAPIs}
+                        hooks={this.getHook.bind(this)}
+                    />
                 </IntlProvider>
             </Provider>
         ), this.appTarget);
     }
-    setHook(hookName, func) {
+    get playground () {
+        return this._playgroundNode.current;
+    }
+    get flow () {
+        return this._internalAPIs.current;
+    }
+    setHook (hookName, func) {
         this.hooks[hookName] = func.bind(this);
     }
-    getHook(hookName, ...args) {
+    getHook (hookName, ...args) {
         return this.hooks[hookName]?.apply?.(this, args);
     }
 }
@@ -221,6 +234,7 @@ class Playground extends React.Component {
                     {...this.state}
                     onUpdateName={this.handleUpdateName}
                     onUpdateImage={this.handleUpdateImage}
+                    trivialAPIref={this.props.apiRef}
                 />
                 <button className={styles.playgroundButton}  onClick={this.uploadImage}>Upload</button>
                 <input id={styles.fileInput} type="file" name="name" onChange={this.onUploadImage} />
