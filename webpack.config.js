@@ -2,7 +2,6 @@ const defaultsDeep = require('lodash.defaultsdeep');
 const path = require('path');
 
 // Plugins
-const HtmlWebpackPlugin = require('html-webpack-plugin');
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 
 // PostCss
@@ -73,49 +72,15 @@ const base = {
 };
 
 module.exports = [
-    // For the playground
+    // Building the playground for external use
     defaultsDeep({}, base, {
-        devServer: {
-            contentBase: path.resolve(__dirname, 'playground'),
-            host: '0.0.0.0',
-            port: process.env.PORT || 8078
-        },
         entry: {
             playground: './src/playground/playground.jsx'
         },
         output: {
-            path: path.resolve(__dirname, 'playground'),
-            filename: '[name].js'
-        },
-        plugins: base.plugins.concat([
-            new HtmlWebpackPlugin({
-                template: 'src/playground/index.ejs',
-                title: 'Scratch 3.0 Paint Editor Playground'
-            })
-        ])
-    }),
-    // For use as a library
-    defaultsDeep({}, base, {
-        externals: {
-            'prop-types': 'prop-types',
-            'react': 'react',
-            'react-dom': 'react-dom',
-            'react-intl': 'react-intl',
-            'react-intl-redux': 'react-intl-redux',
-            'react-popover': 'react-popover',
-            'react-redux': 'react-redux',
-            'react-responsive': 'react-responsive',
-            'react-style-proptype': 'react-style-proptype',
-            'react-tooltip': 'react-tooltip',
-            'redux': 'redux'
-        },
-        entry: {
-            'scratch-paint': './src/index.js'
-        },
-        output: {
             path: path.resolve(__dirname, 'dist'),
-            filename: '[name].js',
-            libraryTarget: 'commonjs2'
+            filename: 'dist-[name].js',
+            libraryTarget: 'umd2'
         }
     })
 ];

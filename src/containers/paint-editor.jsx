@@ -87,6 +87,7 @@ class PaintEditor extends React.Component {
             'startEyeDroppingLoop',
             'stopEyeDroppingLoop',
             'handleSetSelectedItems',
+            'getEffectiveTheme',
             'handleChangeTheme',
             'handleZoomIn',
             'handleZoomOut',
@@ -99,6 +100,11 @@ class PaintEditor extends React.Component {
         this.props.setLayout(this.props.rtl ? 'rtl' : 'ltr');
         this.props.onCustomFontsChanged(this.props.customFonts);
         resizeView(this.props.width, this.props.height);
+        if (this.props.trivialAPIref) {
+            const apiRef = this.props.trivialAPIref.current;
+            apiRef.toggleTheme = this.handleChangeTheme;
+            apiRef.getTheme = this.getEffectiveTheme;
+        }
     }
     componentDidMount () {
         document.addEventListener('keydown', this.props.onKeyPress);

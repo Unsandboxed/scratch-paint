@@ -11,14 +11,6 @@ import styles from './playground.css';
 // as a peer dependency, otherwise there will be two copies of them.
 import {FONTS} from 'scratch-render-fonts';
 
-const appTarget = document.createElement('div');
-appTarget.setAttribute('class', styles.playgroundContainer);
-document.body.appendChild(appTarget);
-const store = createStore(
-    reducer,
-    intlInitialState,
-    window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
-);
 const svgString =
     '<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"' +
             ' x="0px" y="0px" width="32px" height="32px" viewBox="0.5 384.5 32 32"' +
@@ -28,21 +20,81 @@ const svgString =
         '<polyline points="10.689,399.492 3.193,391.997 10.689,384.5 "/>' +
         '<polyline points="30.185,405.995 22.689,413.491 15.192,405.995 "/>' +
     '</svg>';
+class PlaygroundAPI {
+    static makeAppTarget () {
+        const appTarget = document.createElement('div');
+        appTarget.setAttribute('class', styles.playgroundContainer);  
+        return appTarget;
+    }
+    static makeStore () {
+        return createStore(
+            reducer,
+            intlInitialState,
+            window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
+        );
+    }
+    constructor (domNode) {
+        this.hooks = Object.create(null);
+        this.domNode = domNode;
+        this.store = PlaygroundAPI.makeStore();
+        this.appTarget = PlaygroundAPI.makeAppTarget();
+        this.domNode.appendChild(this.appTarget);
+        this._playgroundNode = React.createRef();
+        this._internalAPIs = React.createRef();
+        this._internalAPIs.current = {};
+        this.domRender = ReactDOM.render((
+            <Provider store={this.store}>
+                <IntlProvider>
+                    <Playground
+                        ref={this._playgroundNode}
+                        apiRef={this._internalAPIs}
+                        hooks={this.getHook.bind(this)}
+                    />
+                </IntlProvider>
+            </Provider>
+        ), this.appTarget);
+    }
+    get playground () {
+        return this._playgroundNode.current;
+    }
+    get flow () {
+        return this._internalAPIs.current;
+    }
+    setHook (hookName, func) {
+        this.hooks[hookName] = func.bind(this);
+    }
+    getHook (hookName, ...args) {
+        return this.hooks[hookName]?.apply?.(this, args);
+    }
+}
 class Playground extends React.Component {
+    static exports = {
+        PlaygroundAPI,
+        PaintEditor,
+        defaultImage: svgString,
+        FONTS,
+        styles
+    };
+    static inject (domNode) {
+        return new PlaygroundAPI(domNode);
+    }
     constructor (props) {
         super(props);
         bindAll(this, [
+            'uploadImage',
             'downloadImage',
             'handleUpdateName',
             'handleUpdateImage',
-            'onUploadImage'
+            'onUploadImage',
+            'getHook'
         ]);
         // Append ?dir=rtl to URL to get RTL layout
         const match = location.search.match(/dir=([^&]+)/);
         const rtl = match && match[1] == 'rtl';
-        this.id = 0;
+        this.debug = false;
+        this.id = '0';
         this.state = {
-            name: 'meow',
+            name: 'arrow',
             rotationCenterX: 20,
             rotationCenterY: 400,
             imageFormat: 'svg', // 'svg', 'png', or 'jpg'
@@ -52,17 +104,23 @@ class Playground extends React.Component {
         };
         this.reusableCanvas = document.createElement('canvas');
     }
+    getHook(hook, ...args) {
+        if (!this.props.hooks) return undefined;
+        return this.props.hooks(hook, this, ...args);
+    }
     handleUpdateName (name) {
+        if (this.getHook('handleUpdateName', name) === false) return;
         this.setState({name});
     }
     handleUpdateImage (isVector, image, rotationCenterX, rotationCenterY) {
+        if (this.getHook('handleUpdateImage', isVector, image, rotationCenterX, rotationCenterY) === false) return;
         this.setState({
             imageFormat: isVector ? 'svg' : 'png'
         });
-        if (!isVector) {
+        if (!isVector && this.debug) {
             console.log(`Image width: ${image.width}    Image height: ${image.height}`);
         }
-        console.log(`rotationCenterX: ${rotationCenterX}    rotationCenterY: ${rotationCenterY}`);
+        if (this.debug) console.log(`rotationCenterX: ${rotationCenterX}    rotationCenterY: ${rotationCenterY}`);
         if (isVector) {
             this.setState({image, rotationCenterX, rotationCenterY});
         } else { // is Bitmap
@@ -80,6 +138,7 @@ class Playground extends React.Component {
         }
     }
     downloadImage () {
+        if (this.getHook('downloadImage') === false) return;
         const downloadLink = document.createElement('a');
         document.body.appendChild(downloadLink);
 
@@ -133,9 +192,11 @@ class Playground extends React.Component {
       return byteArrays;
     }
     uploadImage() {
+        if (this.getHook('uploadImage') === false) return;
         document.getElementById(styles.fileInput).click();
     }
     onUploadImage(event) {
+        if (this.getHook('onUploadImage', event) === false) return;
         var file = event.target.files[0];
         var type = file.type === 'image/svg+xml' ? 'svg' :
             file.type === 'image/png' ? 'png' :
@@ -159,7 +220,7 @@ class Playground extends React.Component {
             that.setState({
                 image: content,
                 name: file.name.split('.').slice(0, -1).join('.'),
-                imageId: ++that.id,
+                imageId: String(++that.id),
                 imageFormat: type,
                 rotationCenterX: undefined,
                 rotationCenterY: undefined,
@@ -173,6 +234,7 @@ class Playground extends React.Component {
                     {...this.state}
                     onUpdateName={this.handleUpdateName}
                     onUpdateImage={this.handleUpdateImage}
+                    trivialAPIref={this.props.apiRef}
                 />
                 <button className={styles.playgroundButton}  onClick={this.uploadImage}>Upload</button>
                 <input id={styles.fileInput} type="file" name="name" onChange={this.onUploadImage} />
@@ -180,12 +242,6 @@ class Playground extends React.Component {
             </div>
         );
     }
-
 }
-ReactDOM.render((
-    <Provider store={store}>
-        <IntlProvider>
-            <Playground />
-        </IntlProvider>
-    </Provider>
-), appTarget);
+
+export { Playground };
