@@ -10,6 +10,7 @@ import GradientTypes from '../lib/gradient-types';
 
 import {changeFillColor, clearFillGradient, DEFAULT_COLOR} from '../reducers/fill-style';
 import {changeStrokeColor, clearStrokeGradient} from '../reducers/stroke-style';
+import {changeRectRadius} from '../reducers/rect-mode';
 import {changeMode} from '../reducers/modes';
 import {clearSelectedItems, setSelectedItems} from '../reducers/selected-items';
 import {setCursor} from '../reducers/cursor';
@@ -35,6 +36,9 @@ class RectMode extends React.Component {
     componentWillReceiveProps (nextProps) {
         if (this.tool && nextProps.colorState !== this.props.colorState) {
             this.tool.setColorState(nextProps.colorState);
+        }
+        if (this.tool && nextProps.rectRadius !== this.props.rectRadius) {
+            this.tool.setRectRadius(nextProps.rectRadius);
         }
         if (this.tool && nextProps.selectedItems !== this.props.selectedItems) {
             this.tool.onSelectionChanged(nextProps.selectedItems);
@@ -140,14 +144,17 @@ RectMode.propTypes = {
     isRectModeActive: PropTypes.bool.isRequired,
     onChangeFillColor: PropTypes.func.isRequired,
     onChangeStrokeColor: PropTypes.func.isRequired,
+    onChangeRectRadius: PropTypes.func.isRequired,
     onUpdateImage: PropTypes.func.isRequired,
     selectedItems: PropTypes.arrayOf(PropTypes.instanceOf(paper.Item)),
+    rectRadius: PropTypes.number,
     setCursor: PropTypes.func.isRequired,
     setSelectedItems: PropTypes.func.isRequired
 };
 
 const mapStateToProps = state => ({
     colorState: state.scratchPaint.color,
+    rectRadius: state.scratchPaint.rectMode.rectRadius,
     isRectModeActive: state.scratchPaint.mode === Modes.RECT,
     selectedItems: state.scratchPaint.selectedItems
 });
@@ -175,6 +182,9 @@ const mapDispatchToProps = dispatch => ({
     },
     onChangeStrokeColor: strokeColor => {
         dispatch(changeStrokeColor(strokeColor));
+    },
+    onChangeRectRadius: rectRadius => {
+        dispatch(changeRectRadius(rectRadius));
     }
 });
 

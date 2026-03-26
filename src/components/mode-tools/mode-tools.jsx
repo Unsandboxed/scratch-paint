@@ -7,6 +7,7 @@ import {changeBrushSize} from '../../reducers/brush-mode';
 import {changeBrushSize as changeEraserSize} from '../../reducers/eraser-mode';
 import {changeBitBrushSize} from '../../reducers/bit-brush-size';
 import {changeBitEraserSize} from '../../reducers/bit-eraser-size';
+import {changeRectRadius} from '../../reducers/rect-mode';
 import {setShapesFilled} from '../../reducers/fill-bitmap-shapes';
 
 import FontDropdown from '../../containers/font-dropdown.jsx';
@@ -33,6 +34,7 @@ import curvedPointIcon from '!../../tw-recolor/build!./icons/curved-point.svg';
 import eraserIcon from '../eraser-mode/eraser.svg';
 import flipHorizontalIcon from '!../../tw-recolor/build!./icons/flip-horizontal.svg';
 import flipVerticalIcon from '!../../tw-recolor/build!./icons/flip-vertical.svg';
+import roundRectIcon from '../rounded-rect-mode/rounded-rectangle.svg';
 import straightPointIcon from '!../../tw-recolor/build!./icons/straight-point.svg';
 import bitOvalIcon from '../bit-oval-mode/oval.svg';
 import bitRectIcon from '../bit-rect-mode/rectangle.svg';
@@ -53,6 +55,11 @@ const ModeToolsComponent = props => {
             defaultMessage: 'Eraser size',
             description: 'Label for the eraser size input',
             id: 'paint.modeTools.eraserSize'
+        },
+        rectRadius: {
+            defaultMessage: 'Corner radius',
+            description: 'Label for the corner radius input',
+            id: 'paint.modeTools.rectRadius'
         },
         copy: {
             defaultMessage: 'Copy',
@@ -139,6 +146,33 @@ const ModeToolsComponent = props => {
                 />
             </div>
         );
+    }
+    case Modes.RECT: {
+        // to do: use reducers
+        const currentIcon = roundRectIcon;
+        const currentRadiusValue = props.rectRadius;
+        const changeFunction = props.onRectRadiusSliderChange;
+        return (
+            <div className={classNames(props.className, styles.modeTools)}>
+                <div>
+                    <img
+                        alt={props.intl.formatMessage(messages.rectRadius)}
+                        className={styles.modeToolsIcon}
+                        draggable={false}
+                        src={currentIcon}
+                    />
+                </div>
+                <LiveInput
+                    range
+                    small
+                    max={MAX_STROKE_WIDTH}
+                    min="0"
+                    type="number"
+                    value={currentRadiusValue}
+                    onSubmit={changeFunction}
+                />
+            </div>
+        )
     }
     case Modes.BIT_ERASER:
         /* falls through */
@@ -334,7 +368,8 @@ ModeToolsComponent.propTypes = {
     onOutlineShapes: PropTypes.func.isRequired,
     onPasteFromClipboard: PropTypes.func.isRequired,
     onPointPoints: PropTypes.func.isRequired,
-    onUpdateImage: PropTypes.func.isRequired
+    onUpdateImage: PropTypes.func.isRequired,
+    rectRadius: PropTypes.number
 };
 
 const mapStateToProps = state => ({
@@ -345,7 +380,8 @@ const mapStateToProps = state => ({
     bitEraserSize: state.scratchPaint.bitEraserSize,
     brushValue: state.scratchPaint.brushMode.brushSize,
     clipboardItems: state.scratchPaint.clipboard.items,
-    eraserValue: state.scratchPaint.eraserMode.brushSize
+    eraserValue: state.scratchPaint.eraserMode.brushSize,
+    rectRadius: state.scratchPaint.rectMode.rectRadius
 });
 const mapDispatchToProps = dispatch => ({
     onBrushSliderChange: brushSize => {
@@ -359,6 +395,9 @@ const mapDispatchToProps = dispatch => ({
     },
     onEraserSliderChange: eraserSize => {
         dispatch(changeEraserSize(eraserSize));
+    },
+    onRectRadiusSliderChange: rectRadius => {
+        dispatch(changeRectRadius(rectRadius));
     },
     onFillShapes: () => {
         dispatch(setShapesFilled(true));

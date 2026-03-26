@@ -46,6 +46,7 @@ class RectTool extends paper.Tool {
         this.colorState = null;
         this.isBoundingBoxMode = null;
         this.active = false;
+        this.rectRadius = 0;
     }
     getHitOptions () {
         return {
@@ -69,6 +70,9 @@ class RectTool extends paper.Tool {
     }
     setColorState (colorState) {
         this.colorState = colorState;
+    }
+    setRectRadius (rectRadius) {
+        this.rectRadius = rectRadius;
     }
     handleMouseDown (event) {
         if (event.event.button > 0) return; // only first mouse button
@@ -100,7 +104,7 @@ class RectTool extends paper.Tool {
             rect.size = squareDimensions.size.abs();
         }
 
-        this.rect = new paper.Path.Rectangle(rect);
+        this.rect = new paper.Path.Rectangle(rect, this.rectRadius);
         if (event.modifiers.alt) {
             this.rect.position = event.downPoint;
         } else if (event.modifiers.shift) {
