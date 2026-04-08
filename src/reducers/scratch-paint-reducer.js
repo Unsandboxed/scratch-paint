@@ -15,6 +15,7 @@ import formatReducer from './format';
 import hoverReducer from './hover';
 import layoutReducer from './layout';
 import modalsReducer from './modals';
+import penModeReducer from './pen-mode';
 import rectModeReducer from './rect-mode';
 import selectedItemReducer from './selected-items';
 import textEditTargetReducer from './text-edit-target';
@@ -40,6 +41,7 @@ export default combineReducers({
     hoveredItemId: hoverReducer,
     layout: layoutReducer,
     modals: modalsReducer,
+    penMode: penModeReducer,
     rectMode: rectModeReducer,
     selectedItems: selectedItemReducer,
     textEditTarget: textEditTargetReducer,

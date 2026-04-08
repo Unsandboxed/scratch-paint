@@ -8,7 +8,12 @@ import {changeBrushSize as changeEraserSize} from '../../reducers/eraser-mode';
 import {changeBitBrushSize} from '../../reducers/bit-brush-size';
 import {changeBitEraserSize} from '../../reducers/bit-eraser-size';
 import {changeRectRadius} from '../../reducers/rect-mode';
+import {changeStrokeWidth} from '../../reducers/stroke-width';
+import {changeSmoothness} from '../../reducers/pen-mode';
 import {setShapesFilled} from '../../reducers/fill-bitmap-shapes';
+import {clearSelectedItems, setSelectedItems} from '../../reducers/selected-items';
+import {getSelectedLeafItems} from '../../helper/selection';
+import {shouldShowUnite, uniteSelection} from '../../helper/unite';
 
 import FontDropdown from '../../containers/font-dropdown.jsx';
 import LiveInputHOC from '../forms/live-input-hoc.jsx';
@@ -30,10 +35,12 @@ import bitBrushIcon from '../bit-brush-mode/brush.svg';
 import bitEraserIcon from '../bit-eraser-mode/eraser.svg';
 import bitLineIcon from '../bit-line-mode/line.svg';
 import brushIcon from '../brush-mode/brush.svg';
+import penIcon from '../pen-mode/pen.svg';
 import curvedPointIcon from '!../../tw-recolor/build!./icons/curved-point.svg';
 import eraserIcon from '../eraser-mode/eraser.svg';
 import flipHorizontalIcon from '!../../tw-recolor/build!./icons/flip-horizontal.svg';
 import flipVerticalIcon from '!../../tw-recolor/build!./icons/flip-vertical.svg';
+import groupIcon from '!../../tw-recolor/build!../fixed-tools/icons/group.svg';
 import roundRectIcon from '../rounded-rect-mode/rounded-rectangle.svg';
 import straightPointIcon from '!../../tw-recolor/build!./icons/straight-point.svg';
 import bitOvalIcon from '../bit-oval-mode/oval.svg';
@@ -91,6 +98,11 @@ const ModeToolsComponent = props => {
             description: 'Label for the number input to choose the line thickness',
             id: 'paint.modeTools.thickness'
         },
+        smoothness: {
+            defaultMessage: 'Smoothness',
+            description: 'Label for the number input to choose pen smoothing amount',
+            id: 'paint.modeTools.smoothness'
+        },
         flipHorizontal: {
             defaultMessage: 'Flip Horizontal',
             description: 'Label for the button to flip the image horizontally',
@@ -110,6 +122,11 @@ const ModeToolsComponent = props => {
             defaultMessage: 'Outlined',
             description: 'Label for the button that sets the bitmap rectangle/oval mode to draw filled-in shapes',
             id: 'paint.modeTools.outlined'
+        },
+        unite: {
+            defaultMessage: 'Unite',
+            description: 'Label for the button that merges selected vector shapes into one shape',
+            id: 'paint.modeTools.unite'
         }
     });
 
@@ -124,7 +141,8 @@ const ModeToolsComponent = props => {
             props.mode === Modes.BIT_LINE ? bitLineIcon : bitBrushIcon;
         const currentBrushValue = isBitmap(props.format) ? props.bitBrushSize : props.brushValue;
         const changeFunction = isBitmap(props.format) ? props.onBitBrushSliderChange : props.onBrushSliderChange;
-        const currentMessage = props.mode === Modes.BIT_LINE ? messages.thickness : messages.brushSize;
+        const currentMessage = props.mode === Modes.BIT_LINE ?
+            messages.thickness : messages.brushSize;
         return (
             <div className={classNames(props.className, styles.modeTools)}>
                 <div>
@@ -147,6 +165,30 @@ const ModeToolsComponent = props => {
             </div>
         );
     }
+    case Modes.PEN:
+        return (
+            <div className={classNames(props.className, styles.modeTools)}>
+                <div>
+                    <img
+                        alt={props.intl.formatMessage(messages.smoothness)}
+                        className={styles.modeToolsIcon}
+                        draggable={false}
+                        src={penIcon}
+                    />
+                </div>
+                <Label text={props.intl.formatMessage(messages.smoothness)}>
+                    <LiveInput
+                        range
+                        small
+                        max="100"
+                        min="0"
+                        type="number"
+                        value={props.penSmoothness}
+                        onSubmit={props.onPenSmoothnessChange}
+                    />
+                </Label>
+            </div>
+        );
     case Modes.RECT: {
         // to do: use reducers
         const currentIcon = roundRectIcon;
@@ -274,6 +316,17 @@ const ModeToolsComponent = props => {
                         onClick={props.onFlipVertical}
                     />
                 </InputGroup>
+                {props.mode === Modes.SELECT ? (
+                    <InputGroup className={classNames(styles.modLabeledIconHeight)}>
+                        <LabeledIconButton
+                            disabled={!shouldShowUnite()}
+                            hideLabel={hideLabel(props.intl.locale)}
+                            imgSrc={groupIcon}
+                            title={props.intl.formatMessage(messages.unite)}
+                            onClick={props.onUnite}
+                        />
+                    </InputGroup>
+                ) : null}
             </div>
         );
     case Modes.BIT_TEXT:
@@ -368,8 +421,12 @@ ModeToolsComponent.propTypes = {
     onOutlineShapes: PropTypes.func.isRequired,
     onPasteFromClipboard: PropTypes.func.isRequired,
     onPointPoints: PropTypes.func.isRequired,
+    onPenSmoothnessChange: PropTypes.func.isRequired,
+    onUnite: PropTypes.func.isRequired,
     onUpdateImage: PropTypes.func.isRequired,
-    rectRadius: PropTypes.number
+    penSmoothness: PropTypes.number,
+    rectRadius: PropTypes.number,
+    strokeWidth: PropTypes.number
 };
 
 const mapStateToProps = state => ({
@@ -381,9 +438,11 @@ const mapStateToProps = state => ({
     brushValue: state.scratchPaint.brushMode.brushSize,
     clipboardItems: state.scratchPaint.clipboard.items,
     eraserValue: state.scratchPaint.eraserMode.brushSize,
-    rectRadius: state.scratchPaint.rectMode.rectRadius
+    penSmoothness: state.scratchPaint.penMode.smoothness,
+    rectRadius: state.scratchPaint.rectMode.rectRadius,
+    strokeWidth: state.scratchPaint.color.strokeWidth
 });
-const mapDispatchToProps = dispatch => ({
+const mapDispatchToProps = (dispatch, ownProps) => ({
     onBrushSliderChange: brushSize => {
         dispatch(changeBrushSize(brushSize));
     },
@@ -399,11 +458,21 @@ const mapDispatchToProps = dispatch => ({
     onRectRadiusSliderChange: rectRadius => {
         dispatch(changeRectRadius(rectRadius));
     },
+    onPenSmoothnessChange: smoothness => {
+        dispatch(changeSmoothness(smoothness));
+    },
     onFillShapes: () => {
         dispatch(setShapesFilled(true));
     },
     onOutlineShapes: () => {
         dispatch(setShapesFilled(false));
+    },
+    onUnite: () => {
+        uniteSelection(
+            () => dispatch(clearSelectedItems()),
+            () => dispatch(setSelectedItems(getSelectedLeafItems(), false)),
+            ownProps.onUpdateImage
+        );
     }
 });
 

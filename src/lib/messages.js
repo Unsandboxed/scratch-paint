@@ -21,6 +21,11 @@ const messages = defineMessages({
         description: 'Label for the line tool',
         id: 'paint.lineMode.line'
     },
+    pen: {
+        defaultMessage: 'Pen',
+        description: 'Label for the pen tool that draws smooth lines',
+        id: 'paint.penMode.pen'
+    },
     oval: {
         defaultMessage: 'Circle',
         description: 'Label for the oval-drawing tool',

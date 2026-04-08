@@ -24,6 +24,7 @@ const VECTOR_KEYBINDINGS = {
     f: Modes.FILL,
     t: Modes.TEXT,
     l: Modes.LINE,
+    p: Modes.PEN,
     c: Modes.OVAL,
     r: Modes.RECT
 };
