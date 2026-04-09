@@ -2,7 +2,14 @@ import paper from '@turbowarp/paper';
 import {clearSelection, getSelectedRootItems, setItemSelection} from './selection';
 import {isGroup} from './group';
 
-const canUniteItem = function (item) {
+const BooleanOperations = {
+    UNITE: 'unite',
+    SUBTRACT: 'subtract',
+    INTERSECT: 'intersect',
+    EXCLUDE: 'exclude'
+};
+
+const canBooleanOperateItem = function (item) {
     if (!item || isGroup(item)) {
         return false;
     }
@@ -12,25 +19,27 @@ const canUniteItem = function (item) {
     return typeof item.unite === 'function';
 };
 
-const getUniteCandidates = function () {
-    return getSelectedRootItems().filter(canUniteItem);
+const getBooleanCandidates = function () {
+    return getSelectedRootItems().filter(canBooleanOperateItem);
 };
 
-const shouldShowUnite = function () {
-    return getUniteCandidates().length > 1;
+const shouldShowBooleanOperation = function () {
+    return getBooleanCandidates().length > 1;
 };
 
-const uniteSelection = function (clearSelectedItems, setSelectedItems, onUpdateImage) {
-    const selected = getUniteCandidates();
+const applyBooleanSelection = function (operation, clearSelectedItems, setSelectedItems, onUpdateImage) {
+    const selected = getBooleanCandidates();
     if (selected.length < 2) {
         return false;
     }
 
-    const topMostSelected = selected[selected.length - 1];
+    const topMostSelected = selected.reduce((top, item) => (
+        !top || item.index > top.index ? item : top
+    ), null);
     let merged = selected[0].clone({insert: false});
 
     for (let i = 1; i < selected.length; i++) {
-        const temp = merged.unite(selected[i], {insert: false});
+        const temp = merged[operation](selected[i], {insert: false});
         merged.remove();
         merged = temp;
     }
@@ -49,7 +58,26 @@ const uniteSelection = function (clearSelectedItems, setSelectedItems, onUpdateI
     return true;
 };
 
+const uniteSelection = function (clearSelectedItems, setSelectedItems, onUpdateImage) {
+    return applyBooleanSelection(BooleanOperations.UNITE, clearSelectedItems, setSelectedItems, onUpdateImage);
+};
+
+const subtractSelection = function (clearSelectedItems, setSelectedItems, onUpdateImage) {
+    return applyBooleanSelection(BooleanOperations.SUBTRACT, clearSelectedItems, setSelectedItems, onUpdateImage);
+};
+
+const intersectSelection = function (clearSelectedItems, setSelectedItems, onUpdateImage) {
+    return applyBooleanSelection(BooleanOperations.INTERSECT, clearSelectedItems, setSelectedItems, onUpdateImage);
+};
+
+const excludeSelection = function (clearSelectedItems, setSelectedItems, onUpdateImage) {
+    return applyBooleanSelection(BooleanOperations.EXCLUDE, clearSelectedItems, setSelectedItems, onUpdateImage);
+};
+
 export {
-    shouldShowUnite,
-    uniteSelection
+    shouldShowBooleanOperation,
+    uniteSelection,
+    subtractSelection,
+    intersectSelection,
+    excludeSelection
 };

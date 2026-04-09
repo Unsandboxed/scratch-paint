@@ -30,3 +30,68 @@
     height: 2.85rem; /* for the second row so the dashed borders are equal in size */
     align-items: center;
 }
+
+[dir="ltr"] .mod-divider-before {
+    margin-left: calc(2 * $grid-unit);
+    padding-left: calc(2 * $grid-unit);
+    border-left: 1px dashed $ui-pane-border;
+}
+
+[dir="rtl"] .mod-divider-before {
+    margin-right: calc(2 * $grid-unit);
+    padding-right: calc(2 * $grid-unit);
+    border-right: 1px dashed $ui-pane-border;
+}
+
+.brush-type-dropdown {
+    margin-left: calc(2 * $grid-unit);
+}
+
+.brush-settings-panel {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-left: calc(2 * $grid-unit);
+    padding-left: calc(2 * $grid-unit);
+    gap: calc(2 * $grid-unit);
+}
+
+.mod-unselect {
+    user-select: none;
+}
+
+[dir="rtl"] .brush-type-dropdown {
+    margin-left: 0;
+    margin-right: calc(2 * $grid-unit);
+}
+
+[dir="rtl"] .brush-settings-panel {
+    margin-left: 0;
+    margin-right: calc(2 * $grid-unit);
+    padding-left: 0;
+    padding-right: calc(2 * $grid-unit);
+}
+
+.mod-context-menu {
+    display: flex;
+    flex-direction: column;
+}
+
+.mod-menu-item {
+    display: flex;
+    margin: 0 -$grid-unit;
+    min-width: 6.25rem;
+    padding: calc(3 * $grid-unit);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: 0.1s ease;
+    align-items: center;
+}
+
+.mod-menu-item:hover {
+    background: $looks-transparent;
+}
+
+.mod-menu-item-selected {
+    background: $looks-transparent;
+}

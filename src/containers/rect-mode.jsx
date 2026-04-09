@@ -40,6 +40,9 @@ class RectMode extends React.Component {
         if (this.tool && nextProps.rectRadius !== this.props.rectRadius) {
             this.tool.setRectRadius(nextProps.rectRadius);
         }
+        if (this.tool && nextProps.rectSides !== this.props.rectSides) {
+            this.tool.setRectSides(nextProps.rectSides);
+        }
         if (this.tool && nextProps.selectedItems !== this.props.selectedItems) {
             this.tool.onSelectionChanged(nextProps.selectedItems);
         }
@@ -69,6 +72,8 @@ class RectMode extends React.Component {
             this.props.onUpdateImage
         );
         this.tool.setColorState(this.props.colorState);
+        this.tool.setRectRadius(this.props.rectRadius);
+        this.tool.setRectSides(this.props.rectSides);
         this.tool.activate();
     }
     validateColorState () { // TODO move to shared class
@@ -148,6 +153,7 @@ RectMode.propTypes = {
     onUpdateImage: PropTypes.func.isRequired,
     selectedItems: PropTypes.arrayOf(PropTypes.instanceOf(paper.Item)),
     rectRadius: PropTypes.number,
+    rectSides: PropTypes.number,
     setCursor: PropTypes.func.isRequired,
     setSelectedItems: PropTypes.func.isRequired
 };
@@ -155,6 +161,7 @@ RectMode.propTypes = {
 const mapStateToProps = state => ({
     colorState: state.scratchPaint.color,
     rectRadius: state.scratchPaint.rectMode.rectRadius,
+    rectSides: state.scratchPaint.rectMode.rectSides,
     isRectModeActive: state.scratchPaint.mode === Modes.RECT,
     selectedItems: state.scratchPaint.selectedItems
 });

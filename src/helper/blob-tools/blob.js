@@ -27,6 +27,14 @@ class Blobbiness {
         return 30 / paper.view.zoom;
     }
 
+    static get AUTO () {
+        return 'auto';
+    }
+
+    static get DETAIL () {
+        return 'detail';
+    }
+
     /**
      * @param {function} onUpdateImage call when the drawing has changed to let listeners know
      * @param {function} clearSelectedItems Callback to clear the set of selected items in the Redux state
@@ -40,6 +48,7 @@ class Blobbiness {
         // The following are stored to check whether these have changed and the cursor preview needs to be redrawn.
         this.strokeColor = null;
         this.brushSize = null;
+        this.brushType = null;
         this.fillColor = null;
     }
 
@@ -99,7 +108,7 @@ class Blobbiness {
             if (event.event.button > 0) return; // only first mouse button
             this.active = true;
 
-            if (blob.options.brushSize < Blobbiness.THRESHOLD) {
+            if (blob.getBrushImplementation() === Blobbiness.BROAD) {
                 blob.brush = Blobbiness.BROAD;
                 blob.broadBrushHelper.onBroadMouseDown(event, blob.tool, blob.options);
             } else {
@@ -155,6 +164,19 @@ class Blobbiness {
         this.tool.activate();
     }
 
+    getBrushImplementation () {
+        switch (this.options.brushType) {
+        case Blobbiness.BROAD:
+            return Blobbiness.BROAD;
+        case Blobbiness.DETAIL:
+            return Blobbiness.SEGMENT;
+        case Blobbiness.AUTO:
+            /* falls through */
+        default:
+            return this.options.brushSize < Blobbiness.THRESHOLD ? Blobbiness.BROAD : Blobbiness.SEGMENT;
+        }
+    }
+
     resizeCursorIfNeeded (point) {
         if (!this.options) {
             return;
@@ -164,8 +186,13 @@ class Blobbiness {
         if (this.cursorPreview && !this.cursorPreview.parent) {
             this.cursorPreview = null;
         }
+        if (this.cursorPreview && this.brushType !== this.options.brushType) {
+            this.cursorPreview.remove();
+            this.cursorPreview = null;
+        }
         if (this.cursorPreview &&
                 this.brushSize === this.options.brushSize &&
+                this.brushType === this.options.brushType &&
                 this.fillColor === this.options.fillColor &&
                 this.strokeColor === this.options.strokeColor &&
                 this.cursorPreviewLastPoint.equals(point)) {
@@ -186,7 +213,9 @@ class Blobbiness {
         }
         this.cursorPreview.position = this.cursorPreviewLastPoint;
         this.cursorPreview.radius = this.options.brushSize / 2;
+        this.cursorPreview.opacity = 1;
         this.brushSize = this.options.brushSize;
+        this.brushType = this.options.brushType;
         this.fillColor = this.options.fillColor;
         this.strokeColor = this.options.strokeColor;
         styleCursorPreview(this.cursorPreview, this.options);

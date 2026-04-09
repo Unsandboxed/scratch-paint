@@ -6,6 +6,8 @@ import {getRootItem, isCompoundPathItem, isBoundsItem, isPathItem, isPGTextItem}
 import {getItemsCompoundPath, isCompoundPath, isCompoundPathChild} from './compound-path';
 import {sortItemsByZIndex} from './math';
 
+let selectionOrderCounter = 0;
+
 /**
  * Wrapper for paper.project.getItems that excludes our helper items
  * @param {?object} options See paper.js docs for paper.Item.getItems
@@ -95,6 +97,17 @@ const _setGroupSelection = function (root, selected, fullySelected) {
     }
 };
 
+const _setSelectionOrder = function (root, selected) {
+    if (!root.data) {
+        root.data = {};
+    }
+    if (selected) {
+        root.data.selectionOrder = selectionOrderCounter++;
+    } else if (Object.prototype.hasOwnProperty.call(root.data, 'selectionOrder')) {
+        delete root.data.selectionOrder;
+    }
+};
+
 const setItemSelection = function (item, state, fullySelected) {
     const parentGroup = getItemsGroup(item);
     const itemsCompoundPath = getItemsCompoundPath(item);
@@ -105,11 +118,13 @@ const setItemSelection = function (item, state, fullySelected) {
         setItemSelection(parentGroup, state, fullySelected);
     } else if (itemsCompoundPath) {
         _setGroupSelection(itemsCompoundPath, state, fullySelected);
+        _setSelectionOrder(itemsCompoundPath, state);
     } else {
         if (item.data && item.data.noSelect) {
             return;
         }
         _setGroupSelection(item, state, fullySelected);
+        _setSelectionOrder(item, state);
     }
     
 };
@@ -146,7 +161,7 @@ const clearSelection = function (dispatchClearSelect) {
  * This gets all selected non-grouped items and groups
  * (alternative to paper.project.selectedItems, which includes
  * group children in addition to the group)
- * @return {Array<paper.Item>} in increasing Z order.
+ * @return {Array<paper.Item>} in selection order (oldest first, newest last).
  */
 const getSelectedRootItems = function () {
     const allItems = getAllSelectableRootItems();
@@ -166,8 +181,17 @@ const getSelectedRootItems = function () {
         }
     }
 
-    // sort items by index (0 at bottom)
-    items.sort((a, b) => parseFloat(a.index) - parseFloat(b.index));
+    items.sort((a, b) => {
+        const aOrder = a.data && Object.prototype.hasOwnProperty.call(a.data, 'selectionOrder') ?
+            a.data.selectionOrder : Number.NEGATIVE_INFINITY;
+        const bOrder = b.data && Object.prototype.hasOwnProperty.call(b.data, 'selectionOrder') ?
+            b.data.selectionOrder : Number.NEGATIVE_INFINITY;
+        if (aOrder !== bOrder) {
+            return aOrder - bOrder;
+        }
+        // Fallback keeps deterministic order for items selected before selectionOrder existed.
+        return parseFloat(a.index) - parseFloat(b.index);
+    });
     return items;
 };
 

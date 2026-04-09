@@ -32,11 +32,16 @@ class BroadBrushHelper {
     }
 
     onBroadMouseDown (event, tool, options) {
+        const looseness = (options.broadLooseness || 0) / 100;
         this.steps = 0;
         this.smoothed = 0;
         this.lastVec = null;
-        tool.minDistance = Math.min(5, Math.max(2 / paper.view.zoom, options.brushSize / 2));
-        tool.maxDistance = options.brushSize;
+        this.smoothingThreshold = options.brushType === 'broad' ?
+            Math.max(5, Math.round(18 - (looseness * 10))) : 20;
+        tool.minDistance = options.brushType === 'broad' ?
+            Math.min(10, Math.max(4 / paper.view.zoom, options.brushSize * (0.45 + (0.65 * looseness)))) :
+            Math.min(5, Math.max(2 / paper.view.zoom, options.brushSize / 2));
+        tool.maxDistance = options.brushType === 'broad' ? options.brushSize * (1 + (0.9 * looseness)) : options.brushSize;
         if (event.event.button > 0) return; // only first mouse button
 
         this.finalPath = new paper.Path.Circle({
@@ -48,8 +53,10 @@ class BroadBrushHelper {
     }
 
     onBroadMouseDrag (event, tool, options) {
+        const looseness = (options.broadLooseness || 0) / 100;
         this.steps++;
         const step = (event.delta).normalize(options.brushSize / 2);
+        const simplifyAmount = options.brushType === 'broad' ? (1 + (2 * looseness)) : 1;
 
         // Add an end cap if the mouse has changed direction very quickly
         if (this.lastVec) {
@@ -57,7 +64,7 @@ class BroadBrushHelper {
             if (Math.abs(angle) > 126) {
                 // This will cause us to skip simplifying this sharp angle. Running simplify on
                 // sharp angles causes the stroke to blob outwards.
-                this.simplify(1);
+                this.simplify(simplifyAmount);
                 this.smoothed++;
 
                 // If the angle is large, the broad brush tends to leave behind a flat edge.
@@ -114,7 +121,7 @@ class BroadBrushHelper {
         this.finalPath.insert(0, event.point.subtract(step));
 
         if (this.finalPath.segments.length > this.smoothed + (this.smoothingThreshold * 2)) {
-            this.simplify(1);
+            this.simplify(simplifyAmount);
         }
 
         this.lastVec = event.delta;
@@ -190,6 +197,7 @@ class BroadBrushHelper {
     }
 
     onBroadMouseUp (event, tool, options) {
+        const looseness = (options.broadLooseness || 0) / 100;
         // If there was only a single click, draw a circle.
         if (this.steps === 0) {
             this.endCaps.length = 0;
@@ -214,7 +222,7 @@ class BroadBrushHelper {
         }
 
         // Simplify before adding end cap so cap doesn't get warped
-        this.simplify(1);
+        this.simplify(options.brushType === 'broad' ? (1 + (2 * looseness)) : 1);
         const handleVec = delta.normalize(options.brushSize / 2);
         this.finalPath.add(new paper.Segment(
             event.point.add(handleVec),

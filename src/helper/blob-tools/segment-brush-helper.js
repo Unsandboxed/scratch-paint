@@ -1,6 +1,10 @@
 import paper from '@turbowarp/paper';
 import {styleBlob} from '../../helper/style-path';
 
+const clamp = function (value, min, max) {
+    return Math.min(max, Math.max(min, value));
+};
+
 /**
  * Segment brush functions to add as listeners on the mouse. Call them when the corresponding mouse event happens
  * to get the broad brush behavior.
@@ -20,11 +24,19 @@ class SegmentBrushHelper {
         this.finalPath = null;
         this.firstCircle = null;
     }
+
+    getDetailPrecision (options) {
+        return (options.detailPrecision || 0) / 100;
+    }
+
     onSegmentMouseDown (event, tool, options) {
         if (event.event.button > 0) return; // only first mouse button
 
-        tool.minDistance = 2 / paper.view.zoom;
-        tool.maxDistance = options.brushSize;
+        const detailPrecision = this.getDetailPrecision(options);
+
+        tool.minDistance = options.brushType === 'detail' ? Math.max(0.35 / paper.view.zoom, (0.8 - (0.45 * detailPrecision)) / paper.view.zoom) :
+            2 / paper.view.zoom;
+        tool.maxDistance = options.brushType === 'detail' ? options.brushSize * (0.4 + (0.2 * (1 - detailPrecision))) : options.brushSize;
         
         this.firstCircle = new paper.Path.Circle({
             center: event.point,
@@ -37,6 +49,8 @@ class SegmentBrushHelper {
     
     onSegmentMouseDrag (event, tool, options) {
         if (event.event.button > 0) return; // only first mouse button
+
+        const detailPrecision = this.getDetailPrecision(options);
 
         const step = (event.delta).normalize(options.brushSize / 2);
         const handleVec = step.clone();
@@ -62,7 +76,9 @@ class SegmentBrushHelper {
         path.closed = true;
         // The unite function on curved paths does not always work (sometimes deletes half the path)
         // so we have to flatten.
-        path.flatten(Math.min(5, options.brushSize / 5));
+        path.flatten(options.brushType === 'detail' ?
+            Math.max(0.85, Math.min(2.1, (options.brushSize / 9) * (1.25 - (0.85 * detailPrecision)))) :
+            Math.min(1.5, options.brushSize / 5));
         
         this.lastPoint = event.point;
         const newPath = this.finalPath.unite(path);
@@ -71,8 +87,10 @@ class SegmentBrushHelper {
         this.finalPath = newPath;
     }
 
-    onSegmentMouseUp (event) {
+    onSegmentMouseUp (event, tool, options) {
         if (event.event.button > 0) return; // only first mouse button
+
+        const detailPrecision = this.getDetailPrecision(options);
 
         // TODO: This smoothing tends to cut off large portions of the path! Would like to eventually
         // add back smoothing, maybe a custom implementation that only applies to a subset of the line?
@@ -81,7 +99,7 @@ class SegmentBrushHelper {
         // paths tends to cut off the path.
         if (this.finalPath.segments && this.finalPath.segments.length > 4) {
             this.finalPath.closed = false;
-            this.finalPath.simplify(2);
+            this.finalPath.simplify(options.brushType === 'detail' ? (0.3 + ((1 - detailPrecision) * 0.6)) : 2);
             this.finalPath.closed = true;
             // Merge again with the first point, since it gets distorted when we unclose the path.
             const temp = this.finalPath.unite(this.firstCircle);

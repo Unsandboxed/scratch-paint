@@ -3,18 +3,32 @@ import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import React from 'react';
 
-import {changeBrushSize} from '../../reducers/brush-mode';
+import {
+    changeBrushSize,
+    changeBrushType,
+    changeBroadLooseness,
+    changeDetailPrecision,
+    BrushTypes
+} from '../../reducers/brush-mode';
 import {changeBrushSize as changeEraserSize} from '../../reducers/eraser-mode';
 import {changeBitBrushSize} from '../../reducers/bit-brush-size';
 import {changeBitEraserSize} from '../../reducers/bit-eraser-size';
-import {changeRectRadius} from '../../reducers/rect-mode';
+import {changeRectRadius, changeRectSides} from '../../reducers/rect-mode';
 import {changeStrokeWidth} from '../../reducers/stroke-width';
 import {changeSmoothness} from '../../reducers/pen-mode';
 import {setShapesFilled} from '../../reducers/fill-bitmap-shapes';
 import {clearSelectedItems, setSelectedItems} from '../../reducers/selected-items';
 import {getSelectedLeafItems} from '../../helper/selection';
-import {shouldShowUnite, uniteSelection} from '../../helper/unite';
+import {
+    shouldShowBooleanOperation,
+    uniteSelection,
+    subtractSelection,
+    intersectSelection,
+    excludeSelection
+} from '../../helper/unite';
 
+import Button from '../button/button.jsx';
+import Dropdown from '../dropdown/dropdown.jsx';
 import FontDropdown from '../../containers/font-dropdown.jsx';
 import LiveInputHOC from '../forms/live-input-hoc.jsx';
 import Label from '../forms/label.jsx';
@@ -40,9 +54,12 @@ import curvedPointIcon from '!../../tw-recolor/build!./icons/curved-point.svg';
 import eraserIcon from '../eraser-mode/eraser.svg';
 import flipHorizontalIcon from '!../../tw-recolor/build!./icons/flip-horizontal.svg';
 import flipVerticalIcon from '!../../tw-recolor/build!./icons/flip-vertical.svg';
-import groupIcon from '!../../tw-recolor/build!../fixed-tools/icons/group.svg';
 import roundRectIcon from '../rounded-rect-mode/rounded-rectangle.svg';
 import straightPointIcon from '!../../tw-recolor/build!./icons/straight-point.svg';
+import uniteIcon from '!../../tw-recolor/build!./icons/unite.svg';
+import subtractIcon from '!../../tw-recolor/build!./icons/subtract.svg';
+import intersectIcon from '!../../tw-recolor/build!./icons/intersect.svg';
+import excludeIcon from '!../../tw-recolor/build!./icons/exclude.svg';
 import bitOvalIcon from '../bit-oval-mode/oval.svg';
 import bitRectIcon from '../bit-rect-mode/rectangle.svg';
 import bitOvalOutlinedIcon from '../bit-oval-mode/oval-outlined.svg';
@@ -51,6 +68,7 @@ import bitRectOutlinedIcon from '../bit-rect-mode/rectangle-outlined.svg';
 import {MAX_STROKE_WIDTH} from '../../reducers/stroke-width';
 
 const LiveInput = LiveInputHOC(Input);
+
 const ModeToolsComponent = props => {
     const messages = defineMessages({
         brushSize: {
@@ -67,6 +85,11 @@ const ModeToolsComponent = props => {
             defaultMessage: 'Corner radius',
             description: 'Label for the corner radius input',
             id: 'paint.modeTools.rectRadius'
+        },
+        rectSides: {
+            defaultMessage: 'Sides',
+            description: 'Label for the polygon side count in rect tool',
+            id: 'paint.modeTools.rectSides'
         },
         copy: {
             defaultMessage: 'Copy',
@@ -103,6 +126,51 @@ const ModeToolsComponent = props => {
             description: 'Label for the number input to choose pen smoothing amount',
             id: 'paint.modeTools.smoothness'
         },
+        brushTypeAuto: {
+            defaultMessage: 'Auto',
+            description: 'Label for the automatic vector brush type',
+            id: 'paint.modeTools.brushTypeAuto'
+        },
+        brushTypeBroad: {
+            defaultMessage: 'Broad',
+            description: 'Label for the broad vector brush type',
+            id: 'paint.modeTools.brushTypeBroad'
+        },
+        brushTypeDetail: {
+            defaultMessage: 'Detail',
+            description: 'Label for the detail vector brush type',
+            id: 'paint.modeTools.brushTypeDetail'
+        },
+        brushType: {
+            defaultMessage: 'Brush Type',
+            description: 'Label for the vector brush type dropdown',
+            id: 'paint.modeTools.brushType'
+        },
+        broadLooseness: {
+            defaultMessage: 'Looseness',
+            description: 'Label for broad brush looseness amount',
+            id: 'paint.modeTools.broadLooseness'
+        },
+        detailPrecision: {
+            defaultMessage: 'Precision',
+            description: 'Label for detail brush precision amount',
+            id: 'paint.modeTools.detailPrecision'
+        },
+        subtract: {
+            defaultMessage: 'Subtract',
+            description: 'Label for the button that subtracts selected vector shapes',
+            id: 'paint.modeTools.subtract'
+        },
+        intersect: {
+            defaultMessage: 'Intersect',
+            description: 'Label for the button that keeps the overlap of selected vector shapes',
+            id: 'paint.modeTools.intersect'
+        },
+        exclude: {
+            defaultMessage: 'Exclude',
+            description: 'Label for the button that excludes overlap from selected vector shapes',
+            id: 'paint.modeTools.exclude'
+        },
         flipHorizontal: {
             defaultMessage: 'Flip Horizontal',
             description: 'Label for the button to flip the image horizontally',
@@ -132,7 +200,91 @@ const ModeToolsComponent = props => {
 
     switch (props.mode) {
     case Modes.BRUSH:
-        /* falls through */
+    {
+        const brushTypeOptions = [
+            {type: BrushTypes.AUTO, message: messages.brushTypeAuto},
+            {type: BrushTypes.BROAD, message: messages.brushTypeBroad},
+            {type: BrushTypes.DETAIL, message: messages.brushTypeDetail}
+        ];
+        const selectedBrushType = brushTypeOptions.find(option => option.type === props.brushType) || brushTypeOptions[0];
+        const isBroadBrush = props.brushType === BrushTypes.BROAD;
+        const isDetailBrush = props.brushType === BrushTypes.DETAIL;
+        return (
+            <div className={classNames(props.className, styles.modeTools)}>
+                <div>
+                    <img
+                        alt={props.intl.formatMessage(messages.brushSize)}
+                        className={styles.modeToolsIcon}
+                        draggable={false}
+                        src={brushIcon}
+                    />
+                </div>
+                <LiveInput
+                    range
+                    small
+                    max={MAX_STROKE_WIDTH}
+                    min="1"
+                    type="number"
+                    value={props.brushValue}
+                    onSubmit={props.onBrushSliderChange}
+                />
+                <Dropdown
+                    className={classNames(styles.modUnselect, styles.brushTypeDropdown)}
+                    enterExitTransitionDurationMs={20}
+                    popoverContent={
+                        <InputGroup className={styles.modContextMenu}>
+                            {brushTypeOptions.map(option => (
+                                <Button
+                                    key={option.type}
+                                    className={classNames(styles.modMenuItem, {
+                                        [styles.modMenuItemSelected]: props.brushType === option.type
+                                    })}
+                                    onClick={() => props.onBrushTypeChange(option.type)}
+                                >
+                                    {props.intl.formatMessage(option.message)}
+                                </Button>
+                            ))}
+                        </InputGroup>
+                    }
+                    tipSize={.01}
+                >
+                    <span title={props.intl.formatMessage(messages.brushType)}>
+                        {props.intl.formatMessage(selectedBrushType.message)}
+                    </span>
+                </Dropdown>
+                {isBroadBrush ? (
+                    <InputGroup className={classNames(styles.modDashedBorder, styles.brushSettingsPanel)}>
+                        <Label text={props.intl.formatMessage(messages.broadLooseness)}>
+                            <LiveInput
+                                range
+                                small
+                                max="100"
+                                min="0"
+                                type="number"
+                                value={props.broadLooseness}
+                                onSubmit={props.onBroadLoosenessChange}
+                            />
+                        </Label>
+                    </InputGroup>
+                ) : null}
+                {isDetailBrush ? (
+                    <InputGroup className={classNames(styles.modDashedBorder, styles.brushSettingsPanel)}>
+                        <Label text={props.intl.formatMessage(messages.detailPrecision)}>
+                            <LiveInput
+                                range
+                                small
+                                max="100"
+                                min="0"
+                                type="number"
+                                value={props.detailPrecision}
+                                onSubmit={props.onDetailPrecisionChange}
+                            />
+                        </Label>
+                    </InputGroup>
+                ) : null}
+            </div>
+        );
+    }
     case Modes.BIT_BRUSH:
         /* falls through */
     case Modes.BIT_LINE:
@@ -193,7 +345,7 @@ const ModeToolsComponent = props => {
         // to do: use reducers
         const currentIcon = roundRectIcon;
         const currentRadiusValue = props.rectRadius;
-        const changeFunction = props.onRectRadiusSliderChange;
+        const currentSidesValue = props.rectSides;
         return (
             <div className={classNames(props.className, styles.modeTools)}>
                 <div>
@@ -211,8 +363,19 @@ const ModeToolsComponent = props => {
                     min="0"
                     type="number"
                     value={currentRadiusValue}
-                    onSubmit={changeFunction}
+                    onSubmit={props.onRectRadiusSliderChange}
                 />
+                <Label text={props.intl.formatMessage(messages.rectSides)}>
+                    <LiveInput
+                        range
+                        small
+                        max="12"
+                        min="3"
+                        type="number"
+                        value={currentSidesValue}
+                        onSubmit={props.onRectSidesSliderChange}
+                    />
+                </Label>
             </div>
         )
     }
@@ -277,6 +440,8 @@ const ModeToolsComponent = props => {
     case Modes.BIT_SELECT:
         /* falls through */
     case Modes.SELECT:
+    {
+        const canBooleanOperate = props.selectedItems && shouldShowBooleanOperation();
         return (
             <div className={classNames(props.className, styles.modeTools)}>
                 <InputGroup className={classNames(styles.modDashedBorder, styles.modLabeledIconHeight)}>
@@ -317,18 +482,40 @@ const ModeToolsComponent = props => {
                     />
                 </InputGroup>
                 {props.mode === Modes.SELECT ? (
-                    <InputGroup className={classNames(styles.modLabeledIconHeight)}>
+                    <InputGroup className={classNames(styles.modLabeledIconHeight, styles.modDividerBefore)}>
                         <LabeledIconButton
-                            disabled={!shouldShowUnite()}
-                            hideLabel={hideLabel(props.intl.locale)}
-                            imgSrc={groupIcon}
+                            disabled={!canBooleanOperate}
+                            hideLabel={props.intl.locale !== 'en'}
+                            imgSrc={uniteIcon}
                             title={props.intl.formatMessage(messages.unite)}
                             onClick={props.onUnite}
+                        />
+                        <LabeledIconButton
+                            disabled={!canBooleanOperate}
+                            hideLabel={props.intl.locale !== 'en'}
+                            imgSrc={subtractIcon}
+                            title={props.intl.formatMessage(messages.subtract)}
+                            onClick={props.onSubtract}
+                        />
+                        <LabeledIconButton
+                            disabled={!canBooleanOperate}
+                            hideLabel={props.intl.locale !== 'en'}
+                            imgSrc={intersectIcon}
+                            title={props.intl.formatMessage(messages.intersect)}
+                            onClick={props.onIntersect}
+                        />
+                        <LabeledIconButton
+                            disabled={!canBooleanOperate}
+                            hideLabel={props.intl.locale !== 'en'}
+                            imgSrc={excludeIcon}
+                            title={props.intl.formatMessage(messages.exclude)}
+                            onClick={props.onExclude}
                         />
                     </InputGroup>
                 ) : null}
             </div>
         );
+    }
     case Modes.BIT_TEXT:
         /* falls through */
     case Modes.TEXT:
@@ -397,6 +584,8 @@ const ModeToolsComponent = props => {
 ModeToolsComponent.propTypes = {
     bitBrushSize: PropTypes.number,
     bitEraserSize: PropTypes.number,
+    broadLooseness: PropTypes.number,
+    brushType: PropTypes.string,
     brushValue: PropTypes.number,
     className: PropTypes.string,
     clipboardItems: PropTypes.arrayOf(PropTypes.array),
@@ -406,26 +595,36 @@ ModeToolsComponent.propTypes = {
     hasSelectedUncurvedPoints: PropTypes.bool,
     hasSelectedUnpointedPoints: PropTypes.bool,
     intl: intlShape.isRequired,
+    detailPrecision: PropTypes.number,
     mode: PropTypes.string.isRequired,
     onBitBrushSliderChange: PropTypes.func.isRequired,
     onBitEraserSliderChange: PropTypes.func.isRequired,
+    onBroadLoosenessChange: PropTypes.func.isRequired,
     onBrushSliderChange: PropTypes.func.isRequired,
+    onBrushTypeChange: PropTypes.func.isRequired,
     onCopyToClipboard: PropTypes.func.isRequired,
     onCurvePoints: PropTypes.func.isRequired,
     onDelete: PropTypes.func.isRequired,
     onEraserSliderChange: PropTypes.func,
+    onExclude: PropTypes.func.isRequired,
     onFillShapes: PropTypes.func.isRequired,
     onFlipHorizontal: PropTypes.func.isRequired,
     onFlipVertical: PropTypes.func.isRequired,
+    onIntersect: PropTypes.func.isRequired,
+        onDetailPrecisionChange: PropTypes.func.isRequired,
     onManageFonts: PropTypes.func,
     onOutlineShapes: PropTypes.func.isRequired,
     onPasteFromClipboard: PropTypes.func.isRequired,
     onPointPoints: PropTypes.func.isRequired,
     onPenSmoothnessChange: PropTypes.func.isRequired,
+    onRectSidesSliderChange: PropTypes.func.isRequired,
+    onSubtract: PropTypes.func.isRequired,
     onUnite: PropTypes.func.isRequired,
     onUpdateImage: PropTypes.func.isRequired,
     penSmoothness: PropTypes.number,
     rectRadius: PropTypes.number,
+    rectSides: PropTypes.number,
+    selectedItems: PropTypes.array,
     strokeWidth: PropTypes.number
 };
 
@@ -435,16 +634,30 @@ const mapStateToProps = state => ({
     fillBitmapShapes: state.scratchPaint.fillBitmapShapes,
     bitBrushSize: state.scratchPaint.bitBrushSize,
     bitEraserSize: state.scratchPaint.bitEraserSize,
+    broadLooseness: state.scratchPaint.brushMode.broadLooseness,
+    brushType: state.scratchPaint.brushMode.brushType,
     brushValue: state.scratchPaint.brushMode.brushSize,
     clipboardItems: state.scratchPaint.clipboard.items,
+    selectedItems: state.scratchPaint.selectedItems,
     eraserValue: state.scratchPaint.eraserMode.brushSize,
+    detailPrecision: state.scratchPaint.brushMode.detailPrecision,
     penSmoothness: state.scratchPaint.penMode.smoothness,
     rectRadius: state.scratchPaint.rectMode.rectRadius,
+    rectSides: state.scratchPaint.rectMode.rectSides,
     strokeWidth: state.scratchPaint.color.strokeWidth
 });
 const mapDispatchToProps = (dispatch, ownProps) => ({
     onBrushSliderChange: brushSize => {
         dispatch(changeBrushSize(brushSize));
+    },
+    onBrushTypeChange: brushType => {
+        dispatch(changeBrushType(brushType));
+    },
+    onBroadLoosenessChange: broadLooseness => {
+        dispatch(changeBroadLooseness(broadLooseness));
+    },
+    onDetailPrecisionChange: detailPrecision => {
+        dispatch(changeDetailPrecision(detailPrecision));
     },
     onBitBrushSliderChange: bitBrushSize => {
         dispatch(changeBitBrushSize(bitBrushSize));
@@ -458,6 +671,9 @@ const mapDispatchToProps = (dispatch, ownProps) => ({
     onRectRadiusSliderChange: rectRadius => {
         dispatch(changeRectRadius(rectRadius));
     },
+    onRectSidesSliderChange: rectSides => {
+        dispatch(changeRectSides(rectSides));
+    },
     onPenSmoothnessChange: smoothness => {
         dispatch(changeSmoothness(smoothness));
     },
@@ -469,6 +685,27 @@ const mapDispatchToProps = (dispatch, ownProps) => ({
     },
     onUnite: () => {
         uniteSelection(
+            () => dispatch(clearSelectedItems()),
+            () => dispatch(setSelectedItems(getSelectedLeafItems(), false)),
+            ownProps.onUpdateImage
+        );
+    },
+    onSubtract: () => {
+        subtractSelection(
+            () => dispatch(clearSelectedItems()),
+            () => dispatch(setSelectedItems(getSelectedLeafItems(), false)),
+            ownProps.onUpdateImage
+        );
+    },
+    onIntersect: () => {
+        intersectSelection(
+            () => dispatch(clearSelectedItems()),
+            () => dispatch(setSelectedItems(getSelectedLeafItems(), false)),
+            ownProps.onUpdateImage
+        );
+    },
+    onExclude: () => {
+        excludeSelection(
             () => dispatch(clearSelectedItems()),
             () => dispatch(setSelectedItems(getSelectedLeafItems(), false)),
             ownProps.onUpdateImage
